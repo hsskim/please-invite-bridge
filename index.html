@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Please! 가족 초대</title>
+    <meta name="robots" content="noindex" />
+    <!--
+      초대 링크 브리지 (#312).
+
+      카카오톡 채팅의 자동 링크 변환은 http(s)만 다루고, 안드로이드 WebView는 모르는
+      스킴을 시스템으로 넘기지 않는다. 그래서 커스텀 스킴을 그대로 보내면 안드로이드
+      카카오톡에서 누를 수조차 없다. 이 페이지가 https 한 단계를 끼워 그 문제를 없앤다.
+
+      앱이 실제로 받는 것은 여전히 please://invite?token=... 이다 — 앱의 받는 쪽
+      (invite-token.ts)은 손대지 않는다.
+    -->
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fdfbf7;
+        --surface: #ffffff;
+        --text: #2b2724;
+        --muted: #6f6862;
+        --line: #e8e1d9;
+        --accent: #e2604a;
+        --accent-text: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1c1917;
+          --surface: #262220;
+          --text: #f2ede8;
+          --muted: #a8a09a;
+          --line: #3a3431;
+          --accent: #ef7359;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+          "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+        line-height: 1.6;
+      }
+      main {
+        width: 100%;
+        max-width: 380px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 32px 24px;
+        text-align: center;
+      }
+      h1 { margin: 0 0 8px; font-size: 22px; letter-spacing: -0.01em; }
+      p { margin: 0; color: var(--muted); font-size: 15px; }
+      .actions { margin-top: 24px; display: grid; gap: 10px; }
+      a.button {
+        display: block;
+        padding: 14px 16px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        background: var(--accent);
+        color: var(--accent-text);
+      }
+      a.button.secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--line);
+        font-weight: 500;
+      }
+      .hint {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--muted);
+      }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Please! 가족 초대</h1>
+
+      <div id="opening">
+        <p>앱으로 이동하고 있어요…</p>
+        <div class="actions">
+          <a class="button" id="retry" href="#">앱에서 열기</a>
+          <a class="button secondary" id="store" href="#">앱 설치하기</a>
+        </div>
+        <p class="hint">
+          화면이 그대로라면 오른쪽 위 메뉴에서 <b>다른 브라우저로 열기</b>를 선택해
+          주세요. 카카오톡 안에서는 앱이 열리지 않는 경우가 있어요.
+        </p>
+      </div>
+
+      <div id="invalid" hidden>
+        <p>초대 링크가 올바르지 않아요.<br />가족에게 새 링크를 요청해 주세요.</p>
+        <div class="actions">
+          <a class="button secondary" id="store-fallback" href="#">앱 설치하기</a>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        var APP_SCHEME = 'please';
+        var ANDROID_PACKAGE = 'kr.please.app';
+        var PLAY_URL =
+          'https://play.google.com/store/apps/details?id=' + ANDROID_PACKAGE;
+        // iOS는 출시 후 App Store 주소로 교체한다 (#312). 그전까지는 안내만 한다.
+        var APP_STORE_URL = '';
+
+        function readToken() {
+          var match = /[?&]token=([^&#]*)/.exec(window.location.search);
+          if (!match) return null;
+          try {
+            var value = decodeURIComponent(match[1]);
+            return value || null;
+          } catch (error) {
+            // 잘못된 percent encoding은 초대 링크가 아닌 것으로 본다.
+            return null;
+          }
+        }
+
+        var isAndroid = /android/i.test(navigator.userAgent);
+        var isIOS =
+          /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+          // 아이패드는 데스크톱 사파리로 위장한다.
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        var storeUrl = isIOS ? APP_STORE_URL : PLAY_URL;
+        var token = readToken();
+
+        if (!token) {
+          document.getElementById('opening').hidden = true;
+          document.getElementById('invalid').hidden = false;
+          setStoreLink(document.getElementById('store-fallback'));
+          return;
+        }
+
+        var query = 'token=' + encodeURIComponent(token);
+
+        // 안드로이드는 intent:// 문법이라야 인앱 WebView에서 앱이 열린다. 커스텀 스킴을
+        // 그대로 주면 WebView가 ERR_UNKNOWN_URL_SCHEME으로 실패한다.
+        // S.browser_fallback_url 덕분에 앱이 없으면 스토어로 넘어간다.
+        var androidUrl =
+          'intent://invite?' +
+          query +
+          '#Intent;scheme=' +
+          APP_SCHEME +
+          ';package=' +
+          ANDROID_PACKAGE +
+          ';S.browser_fallback_url=' +
+          encodeURIComponent(PLAY_URL) +
+          ';end';
+
+        var schemeUrl = APP_SCHEME + '://invite?' + query;
+        var appUrl = isAndroid ? androidUrl : schemeUrl;
+
+        var retry = document.getElementById('retry');
+        retry.href = appUrl;
+        setStoreLink(document.getElementById('store'));
+
+        function setStoreLink(element) {
+          if (!storeUrl) {
+            // iOS 출시 전에는 스토어 주소가 없다. 링크를 걸지 않고 문구만 바꾼다.
+            element.textContent = '앱을 먼저 설치해 주세요';
+            element.removeAttribute('href');
+            return;
+          }
+          element.href = storeUrl;
+        }
+
+        // 자동 이동. 실패해도 위 버튼이 남아 있어 사용자가 직접 누를 수 있다.
+        window.location.href = appUrl;
+      })();
+    </script>
+  </body>
+</html>
