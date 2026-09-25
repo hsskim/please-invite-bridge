@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "kr.please.app",
+      "sha256_cert_fingerprints": [
+        "EC:37:7C:88:D8:94:0A:52:FB:ED:D6:87:7E:73:1A:CB:0E:72:CC:51:8E:0E:08:50:5F:61:B6:0C:CC:8B:43:3A"
+      ]
+    }
+  }
+]

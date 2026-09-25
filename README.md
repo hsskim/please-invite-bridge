@@ -29,20 +29,23 @@ iOS가 되는 건 앱이 잘 만들어져서가 아니라 OS가 커스텀 스킴
 자동 이동이 실패해도 "앱에서 열기" 버튼이 남아 사용자가 직접 누를 수 있다. 카카오톡
 인앱 브라우저는 버전에 따라 `intent://`도 막으므로 "다른 브라우저로 열기" 안내도 함께 둔다.
 
-## 앞으로 (App Links / Universal Links)
+## App Links / Universal Links
 
 지금은 브리지가 커스텀 스킴으로 넘긴다. 커스텀 스킴은 **아무 앱이나 같은 스킴을 등록해
 가로챌 수 있고**, 이 링크에는 가족 참여 자격인 초대 토큰이 실려 있다. 도메인 소유를
 증명하는 방식으로 옮겨야 한다.
 
-- `/.well-known/assetlinks.json` (안드로이드) — 앱 서명 키 SHA-256:
-  `ec377c88d8940a52fbedd6877e731acb0e72cc518e0e08505f61b60ccc8b433a`
-- `/.well-known/apple-app-site-association` (iOS)
+- [`/.well-known/assetlinks.json`](https://invite.yellodevs.space/.well-known/assetlinks.json)
+  (안드로이드) — Play Console의 **Classical app signing key** SHA-256을 사용한다.
+  Upload key나 Post-quantum key 지문은 사용하지 않는다.
+- [`/.well-known/apple-app-site-association`](https://invite.yellodevs.space/.well-known/apple-app-site-association)
+  (iOS) — Team ID `Y2C6WGGLN7`과 번들 ID `kr.please.app`을 결합한다.
+- `.nojekyll`은 GitHub Pages가 `.well-known` 디렉터리를 그대로 배포하도록 한다.
 - 앱 쪽 `app.json`에 `android.intentFilters`(`autoVerify`)와 `ios.associatedDomains` 추가 —
   **네이티브 변경이라 재빌드가 필요하다**
 
-두 파일을 여기 올려도 앱이 선언하기 전까지는 아무 일도 하지 않으므로, 앱 빌드와 순서를
-맞출 필요는 없다.
+두 파일만으로 앱의 링크 처리 방식은 바뀌지 않는다. 앱의 도메인 선언과 새 빌드는
+별도로 필요하다.
 
 **그때도 링크 주소는 바뀌지 않는다** — 이미 나간 초대가 계속 동작한다.
 
