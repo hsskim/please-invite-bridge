@@ -85,28 +85,47 @@
         font-size: 13px;
         color: var(--muted);
       }
+      .languages { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
+      .languages button {
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px;
+        padding: 4px 12px;
+      }
+      .languages button[aria-pressed="true"] {
+        border-color: var(--accent);
+        color: var(--text);
+        font-weight: 600;
+      }
       [hidden] { display: none !important; }
     </style>
   </head>
   <body>
     <main>
-      <h1>Please! 가족 초대</h1>
+      <div class="languages" id="languages" role="group" aria-label="언어">
+        <button type="button" data-locale="ko" aria-pressed="true">한국어</button>
+        <button type="button" data-locale="en" aria-pressed="false">English</button>
+      </div>
+      <h1 id="heading">Please! 가족 초대</h1>
 
       <div id="opening">
-        <p>앱으로 이동하고 있어요…</p>
-        <div class="actions">
+        <p id="opening-message">앱으로 이동하고 있어요…</p>
+        <div class="actions" id="opening-actions">
           <a class="button" id="retry" href="#">앱에서 열기</a>
           <a class="button secondary" id="store" href="#">앱 설치하기</a>
         </div>
-        <p class="hint">
-          화면이 그대로라면 오른쪽 위 메뉴에서 <b>다른 브라우저로 열기</b>를 선택해
-          주세요. 카카오톡 안에서는 앱이 열리지 않는 경우가 있어요.
+        <p class="hint" id="hint">
+          <span id="hint-before">화면이 그대로라면 오른쪽 위 메뉴에서 </span><b id="hint-action">다른 브라우저로 열기</b><span id="hint-after">를 선택해 주세요. 카카오톡 안에서는 앱이 열리지 않는 경우가 있어요.</span>
         </p>
       </div>
 
       <div id="invalid" hidden>
-        <p>초대 링크가 올바르지 않아요.<br />가족에게 새 링크를 요청해 주세요.</p>
-        <div class="actions">
+        <p><span id="invalid-first">초대 링크가 올바르지 않아요.</span><br /><span id="invalid-second">가족에게 새 링크를 요청해 주세요.</span></p>
+        <div class="actions" id="invalid-actions">
           <a class="button secondary" id="store-fallback" href="#">앱 설치하기</a>
         </div>
       </div>
@@ -118,8 +137,58 @@
         var ANDROID_PACKAGE = 'kr.please.app';
         var PLAY_URL =
           'https://play.google.com/store/apps/details?id=' + ANDROID_PACKAGE;
-        // iOS는 출시 후 App Store 주소로 교체한다 (#312). 그전까지는 안내만 한다.
-        var APP_STORE_URL = '';
+        var APP_STORE_URL = 'https://apps.apple.com/kr/app/id6806937598';
+        var copy = {
+          ko: {
+            languageLabel: '언어',
+            title: 'Please! 가족 초대',
+            heading: 'Please! 가족 초대',
+            opening: '앱으로 이동하고 있어요…',
+            desktop: '가족에 참여하려면 휴대폰에서 이 링크를 열어 주세요.',
+            retry: '앱에서 열기',
+            store: '앱 설치하기',
+            hintBefore: '화면이 그대로라면 오른쪽 위 메뉴에서 ',
+            hintAction: '다른 브라우저로 열기',
+            hintAfter: '를 선택해 주세요. 카카오톡 안에서는 앱이 열리지 않는 경우가 있어요.',
+            invalidFirst: '초대 링크가 올바르지 않아요.',
+            invalidSecond: '가족에게 새 링크를 요청해 주세요.',
+          },
+          en: {
+            languageLabel: 'Language',
+            title: 'Please! Family invitation',
+            heading: 'Join your family on Please!',
+            opening: 'Opening Please!…',
+            desktop: 'Open this link on your phone to join.',
+            retry: 'Open in Please!',
+            store: 'Get Please!',
+            hintBefore: 'Nothing happened? From the menu, select ',
+            hintAction: 'Open in browser',
+            hintAfter: '. Some in-app browsers, including KakaoTalk, may block the app link.',
+            invalidFirst: 'This invite link isn’t valid.',
+            invalidSecond: 'Ask your family for a new link.',
+          },
+        };
+
+        function applyLocale(locale) {
+          var words = copy[locale];
+          document.documentElement.lang = locale;
+          document.title = words.title;
+          document.getElementById('languages').setAttribute('aria-label', words.languageLabel);
+          document.getElementById('heading').textContent = words.heading;
+          document.getElementById('opening-message').textContent = isMobile ? words.opening : words.desktop;
+          document.getElementById('retry').textContent = words.retry;
+          document.getElementById('store').textContent = words.store;
+          document.getElementById('store-fallback').textContent = words.store;
+          document.getElementById('hint-before').textContent = words.hintBefore;
+          document.getElementById('hint-action').textContent = words.hintAction;
+          document.getElementById('hint-after').textContent = words.hintAfter;
+          document.getElementById('invalid-first').textContent = words.invalidFirst;
+          document.getElementById('invalid-second').textContent = words.invalidSecond;
+          var buttons = document.querySelectorAll('[data-locale]');
+          for (var i = 0; i < buttons.length; i++) {
+            buttons[i].setAttribute('aria-pressed', String(buttons[i].getAttribute('data-locale') === locale));
+          }
+        }
 
         function readToken() {
           var match = /[?&]token=([^&#]*)/.exec(window.location.search);
@@ -138,14 +207,30 @@
           /iphone|ipad|ipod/i.test(navigator.userAgent) ||
           // 아이패드는 데스크톱 사파리로 위장한다.
           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var isMobile = isAndroid || isIOS;
+        var browserLanguage = navigator.languages && navigator.languages[0] || navigator.language || '';
+        applyLocale(/^ko(?:-|$)/i.test(browserLanguage) ? 'ko' : 'en');
+        var languageButtons = document.querySelectorAll('[data-locale]');
+        for (var i = 0; i < languageButtons.length; i++) {
+          languageButtons[i].addEventListener('click', function () {
+            applyLocale(this.getAttribute('data-locale'));
+          });
+        }
 
-        var storeUrl = isIOS ? APP_STORE_URL : PLAY_URL;
+        var storeUrl = isIOS ? APP_STORE_URL : isAndroid ? PLAY_URL : null;
         var token = readToken();
 
         if (!token) {
           document.getElementById('opening').hidden = true;
           document.getElementById('invalid').hidden = false;
-          setStoreLink(document.getElementById('store-fallback'));
+          if (isMobile) setStoreLink(document.getElementById('store-fallback'));
+          else document.getElementById('invalid-actions').hidden = true;
+          return;
+        }
+
+        if (!isMobile) {
+          document.getElementById('opening-actions').hidden = true;
+          document.getElementById('hint').hidden = true;
           return;
         }
 
@@ -173,12 +258,6 @@
         setStoreLink(document.getElementById('store'));
 
         function setStoreLink(element) {
-          if (!storeUrl) {
-            // iOS 출시 전에는 스토어 주소가 없다. 링크를 걸지 않고 문구만 바꾼다.
-            element.textContent = '앱을 먼저 설치해 주세요';
-            element.removeAttribute('href');
-            return;
-          }
           element.href = storeUrl;
         }
 
