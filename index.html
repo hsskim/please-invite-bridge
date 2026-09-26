@@ -106,7 +106,7 @@
   </head>
   <body>
     <main>
-      <div class="languages" role="group" aria-label="Language">
+      <div class="languages" id="languages" role="group" aria-label="언어">
         <button type="button" data-locale="ko" aria-pressed="true">한국어</button>
         <button type="button" data-locale="en" aria-pressed="false">English</button>
       </div>
@@ -140,6 +140,7 @@
         var APP_STORE_URL = 'https://apps.apple.com/kr/app/id6806937598';
         var copy = {
           ko: {
+            languageLabel: '언어',
             title: 'Please! 가족 초대',
             heading: 'Please! 가족 초대',
             opening: '앱으로 이동하고 있어요…',
@@ -153,6 +154,7 @@
             invalidSecond: '가족에게 새 링크를 요청해 주세요.',
           },
           en: {
+            languageLabel: 'Language',
             title: 'Please! Family invitation',
             heading: 'Join your family on Please!',
             opening: 'Opening Please!…',
@@ -171,6 +173,7 @@
           var words = copy[locale];
           document.documentElement.lang = locale;
           document.title = words.title;
+          document.getElementById('languages').setAttribute('aria-label', words.languageLabel);
           document.getElementById('heading').textContent = words.heading;
           document.getElementById('opening-message').textContent = isMobile ? words.opening : words.desktop;
           document.getElementById('retry').textContent = words.retry;
