@@ -46,7 +46,6 @@ iOS가 되는 건 앱이 잘 만들어져서가 아니라 OS가 커스텀 스킴
   Upload key나 Post-quantum key 지문은 사용하지 않는다.
 - [`/.well-known/apple-app-site-association`](https://invite.yellodevs.space/.well-known/apple-app-site-association)
   (iOS) — Team ID `Y2C6WGGLN7`과 번들 ID `kr.please.app`을 결합한다.
-- `.nojekyll`은 GitHub Pages가 `.well-known` 디렉터리를 그대로 배포하도록 한다.
 - `_headers`는 Cloudflare Pages에서 두 검증 파일을 `application/json`으로 제공한다.
 - 앱 쪽 `app.json`에 `android.intentFilters`(`autoVerify`)와 `ios.associatedDomains` 추가 —
   **네이티브 변경이라 재빌드가 필요하다**
@@ -56,13 +55,18 @@ iOS가 되는 건 앱이 잘 만들어져서가 아니라 OS가 커스텀 스킴
 
 **그때도 링크 주소는 바뀌지 않는다** — 이미 나간 초대가 계속 동작한다.
 
-## Cloudflare Pages 이전 확인
+## 배포
 
-이 저장소의 루트가 정적 사이트의 배포 폴더다. Cloudflare Pages에 GitHub 저장소를
-연결한 뒤 `*.pages.dev` 주소에서 브리지 페이지와 두 `/.well-known/` URL을 먼저
-확인한다. 두 파일은 리다이렉트 없이 HTTP 200, `Content-Type: application/json`,
-유효한 JSON을 반환해야 한다. 확인 후 Pages 프로젝트에 `invite.yellodevs.space`를
-사용자 도메인으로 등록하고, Namecheap의 `invite` CNAME만 Pages 주소로 교체한다.
-기존 초대 링크가 계속 열리는지 실제 도메인에서 재확인한다.
+**Cloudflare Pages**(`please-invite-bridge.pages.dev`)가 이 저장소의 루트를 그대로
+배포한다. Cloudflare Workers and Pages GitHub App이 연결돼 있어 main에 push하면
+자동으로 배포된다. `yellodevs.space`의 DNS는 Cloudflare가 관리하며, `invite` CNAME이
+Pages 주소를 가리킨다.
+
+예전에는 GitHub Pages로 배포했으나 Cloudflare 이전 후 2026-09-28에 껐다. `CNAME`과
+`.nojekyll`은 GitHub Pages 전용이라 함께 지웠다. **GitHub Pages를 다시 켜지 않는다** —
+배포처가 둘이면 어느 쪽이 실제 트래픽을 받는지 헷갈린다.
+
+배포 후에는 브리지 페이지와 두 `/.well-known/` URL을 실제 도메인에서 확인한다. 두 파일은
+리다이렉트 없이 HTTP 200, `Content-Type: application/json`, 유효한 JSON을 반환해야 한다.
 
 관련: hsskim/project-please#312
